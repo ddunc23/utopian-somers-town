@@ -86,12 +86,12 @@
             // Add photo data source
             map.addSource('photographs', {
                 type: 'geojson',
-                data: '/data/LocatedImages.geojson', // Path to the GeoJSON data
+                data: `${window.location.href}/data/LocatedImages.geojson`, // Path to the GeoJSON data
             });
 
             map.addSource('quotes', {
                 type: 'geojson',
-                data: '/data/Quotes.geojson', // Path to the GeoJSON data
+                data: `${window.location.href}/data/Quotes.geojson`, // Path to the GeoJSON data
             });
 
             // Add photo layer
@@ -137,8 +137,9 @@
 
             // Add a click event listener for the 'photos' layer
             map.on('click', 'photos', (e) => {
+
                 const coordinates = e.features[0].geometry.coordinates.slice();
-                const imageUrl = e.features[0].properties.url;
+                const imageUrl = `${window.location.href}${e.features[0].properties.url}`;
 
                 // Ensure the popup appears over the clicked marker
                 while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
