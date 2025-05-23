@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            font-family: sans-serif;
+            font-weight: 300;
+            line-height: 1.5em;
+        }
+
+        #container {
+            display: flex;
+            flex: 1;
+            height: 100%;
+            width: 100%;
+        }
+
+        #map {
+            width: 66%;
+            height: 100%;
+        }
+
+        #sidebar {
+            width: 33%;
+            height: 100%;
+            overflow: scroll;
+            padding: 30px;
+            box-sizing: border-box; /* Ensures padding is included in the element's width/height */
+        }
+
+        .header {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            z-index: 1;
+        }
+
+        blockquote {
+            font-style: italic;
+            margin: 0;
+            padding: 10px;
+            border-left: 4px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="sidebar">
+            <img src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2F68.media.tumblr.com%2Fc59caa95eaeb8e5ef59eaf84e9dbe9d0%2Ftumblr_ood5d75b3A1w27jeoo1_400.gif&f=1&nofb=1&ipt=b17c24f0908088f26723d49c25b9404e1cabfea74077287d45c2af9e6e6b3536" style="width: 100%; height: auto;"/>
+            <h3>Utopia in Somers Town and Bloomsbury</h2>
+            <p>This interactive map documents a walk from University College London, through Somers Town to St Pancras Old Church behind Euston Station. Participants were asked to read extracts from a range of utopian (or distopian) texts with connections to the stopping points, and to take photraphs or make notes about their observations related to the theme.</p>
+
+            <p>We began our walk with an extract from Ursula Le Guin's novel <em>Always Coming Home</em>, and an image of Wile-e-Coyote painting a tunnel on a wall, through which Roadrunner then runs. The provocation here was that what if Utopia, rather than being a place or a time, might instead be a tunnel that you could paint anywhere, and escape through.</p>
+
+            <p>Blue dots are the stopping points and extracts; pink dots are photographs. Click on these to explore our observations.</p>
+        </div>
+        <div id="map"></div>
+    </div>
+    <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
+    <script>
+        // Initialize the map
+        const map = new maplibregl.Map({
+            container: 'map', // ID of the map container
+            style: 'https://api.maptiler.com/maps/dataviz/style.json?key=ivo1hejMto8SOQMBcG4y', // Map style URL
+            center: [-0.130986, 51.528826], // Initial map center [longitude, latitude]
+            zoom: 14 // Initial zoom level
+        });
+
+        // Add zoom and rotation controls to the map
+        map.addControl(new maplibregl.NavigationControl());
+
+        map.on('load', () => {
+            // Add photo data source
+            map.addSource('photographs', {
+                type: 'geojson',
+                data: '/data/LocatedImages.geojson', // Path to the GeoJSON data
+            });
+
+            map.addSource('quotes', {
+                type: 'geojson',
+                data: '/data/Quotes.geojson', // Path to the GeoJSON data
+            });
+
+            // Add photo layer
+            map.addLayer({
+                id: 'photos',
+                type: 'circle',
+                source: 'photographs',
+                paint: {
+                    'circle-color': '#f88379',
+                    'circle-radius': 5
+                }
+            });
+
+            // Add quotes layer
+            map.addLayer({
+                id: 'quotes',
+                type: 'circle',
+                source: 'quotes',
+                paint: {
+                    'circle-color': '#4a90e2',
+                    'circle-radius': 5
+                }
+            });
+
+            // Add a click event listener for the 'quotes' layer
+            map.on('click', 'quotes', (e) => {
+                const text = `<h2>${e.features[0].properties.title}</h2>${e.features[0].properties.body}`;
+
+                // Update sidebar content
+                const sidebar = document.getElementById('sidebar');
+                sidebar.innerHTML = `${text}`;
+            });
+
+            // Change the cursor to a pointer when hovering over the 'quotes' layer
+            map.on('mouseenter', 'quotes', () => {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+
+            // Reset the cursor when leaving the 'quotes' layer
+            map.on('mouseleave', 'quotes', () => {
+                map.getCanvas().style.cursor = '';
+            });
+
+            // Add a click event listener for the 'photos' layer
+            map.on('click', 'photos', (e) => {
+                const coordinates = e.features[0].geometry.coordinates.slice();
+                const imageUrl = e.features[0].properties.url;
+
+                // Ensure the popup appears over the clicked marker
+                while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+                    coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+                }
+
+                // Create and display the popup
+                new maplibregl.Popup({ maxWidth: '400px' })
+                    .setLngLat(coordinates)
+                    .setHTML(`<img src="${imageUrl}" alt="Image" style="max-width: 380px;">`)
+                    .addTo(map);
+            });
+
+            // Change the cursor to a pointer when hovering over the 'photos' layer
+            map.on('mouseenter', 'photos', () => {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+
+            // Reset the cursor when leaving the 'photos' layer
+            map.on('mouseleave', 'photos', () => {
+                map.getCanvas().style.cursor = '';
+            });
+        });
+    </script>
+</body>
+</html>
